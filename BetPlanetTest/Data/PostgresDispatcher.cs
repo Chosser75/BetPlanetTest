@@ -6,16 +6,18 @@ using System.Linq;
 
 namespace BetPlanetTest.Data
 {
+    /// <summary>
+    /// Диспетчер по CRUD-коммуникациям с БД test
+    /// Допускает только одно одномоентное обращение к базе данных
+    /// </summary>
     public class PostgresDispatcher: IDatabaseDispatcher
     {
 
-        private static Object syncUsersObject;
-        private static Object syncCommentsObject;
+        private static Object syncObject;
 
         static PostgresDispatcher()
         {
-            syncUsersObject = new Object();
-            syncCommentsObject = new Object();
+            syncObject = new Object();
         }
 
         #region ------------- Users----------------
@@ -28,7 +30,7 @@ namespace BetPlanetTest.Data
             {
                 using (testContext context = new testContext())
                 {
-                    lock (syncUsersObject)
+                    lock (syncObject)
                     {
                         context.Users.Add(newUser);
                         context.SaveChanges();
@@ -51,7 +53,7 @@ namespace BetPlanetTest.Data
 
             using (testContext context = new testContext())
             {
-                lock (syncUsersObject)
+                lock (syncObject)
                 {
                     user = context.Users.Find(id);
                 }
@@ -66,7 +68,7 @@ namespace BetPlanetTest.Data
 
             using (testContext context = new testContext())
             {
-                lock (syncUsersObject)
+                lock (syncObject)
                 {
                     users = context.Users.AsQueryable().ToList();
                 }
@@ -83,7 +85,7 @@ namespace BetPlanetTest.Data
             {
                 using (testContext context = new testContext())
                 {
-                    lock (syncUsersObject)
+                    lock (syncObject)
                     {
                         Users userToUpdate = context.Users.Find(user.Id);
                         if (userToUpdate != null)
@@ -116,7 +118,7 @@ namespace BetPlanetTest.Data
             {
                 using (testContext context = new testContext())
                 {
-                    lock (syncUsersObject)
+                    lock (syncObject)
                     {
                         Users userToDelete = context.Users.Find(id);
                         if (userToDelete != null)
@@ -143,30 +145,127 @@ namespace BetPlanetTest.Data
 
         #endregion ----------- Users ---------------
 
-        public int CreateComment(Comments user)
+        public int CreateComment(Comments comment)
         {
-            throw new NotImplementedException();
+            Comments newComment = comment;
+
+            try
+            {
+                using (testContext context = new testContext())
+                {
+                    lock (syncObject)
+                    {
+                        context.Comments.Add(newComment);
+                        context.SaveChanges();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // должно быть залогировано
+                Debug.WriteLine(ex.Message + " ===== " + ex.StackTrace);
+                return -1;
+            }
+
+            return comment.Id;
         }     
 
         public Comments GetCommentById(int id)
         {
-            throw new NotImplementedException();
+            Comments comment;
+
+            using (testContext context = new testContext())
+            {
+                lock (syncObject)
+                {
+                    comment = context.Comments.Find(id);
+                }
+            }
+
+            return comment;
         }
 
         public IEnumerable<Comments> GetComments()
         {
-            throw new NotImplementedException();
+            List<Comments> comments;
+
+            using (testContext context = new testContext())
+            {
+                lock (syncObject)
+                {
+                    comments = context.Comments.AsQueryable().ToList();
+                }
+            }
+
+            return comments;
         }
         
-        public bool UpdateComment(Comments user)
+        public bool UpdateComment(Comments comment)
         {
-            throw new NotImplementedException();
+            bool isSuccess = false;
+
+            try
+            {
+                using (testContext context = new testContext())
+                {
+                    lock (syncObject)
+                    {
+                        Comments commentToUpdate = context.Comments.Find(comment.Id);
+                        if (commentToUpdate != null)
+                        {
+                            commentToUpdate = comment;
+                            int result = context.SaveChanges();
+                            if (result > 0)
+                            {
+                                isSuccess = true;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // должно быть залогировано
+                Debug.WriteLine(ex.Message + " ===== " + ex.StackTrace);
+                return false;
+            }
+
+            return isSuccess;
         }
 
         public bool DeleteComment(int id)
         {
-            throw new NotImplementedException();
+            bool isSuccess = false;
+
+            try
+            {
+                using (testContext context = new testContext())
+                {
+                    lock (syncObject)
+                    {
+                        Comments commentToDelete = context.Comments.Find(id);
+                        if (commentToDelete != null)
+                        {
+                            context.Comments.Remove(commentToDelete);
+                            int result = context.SaveChanges();
+                            if (result > 0)
+                            {
+                                isSuccess = true;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // должно быть залогировано
+                Debug.WriteLine(ex.Message + " ===== " + ex.StackTrace);
+                return false;
+            }
+
+            return isSuccess;
         }
+
 
     }
 }
