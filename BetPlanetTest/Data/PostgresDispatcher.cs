@@ -44,7 +44,7 @@ namespace BetPlanetTest.Data
                 return -1;
             }
 
-            return user.Id;
+            return newUser.Id;
         }
 
         public Users GetUserById(int id)
@@ -138,7 +138,8 @@ namespace BetPlanetTest.Data
                         Users userToUpdate = context.Users.Find(user.Id);
                         if (userToUpdate != null)
                         {
-                            userToUpdate = user;
+                            userToUpdate.Name = user.Name;
+                            userToUpdate.Email = user.Email;
                             int result = context.SaveChanges();
                             if (result > 0)
                             {
@@ -215,7 +216,7 @@ namespace BetPlanetTest.Data
                 return -1;
             }
 
-            return comment.Id;
+            return newComment.Id;
         }     
 
         public Comments GetCommentById(int id)
@@ -276,7 +277,8 @@ namespace BetPlanetTest.Data
                         Comments commentToUpdate = context.Comments.Find(comment.Id);
                         if (commentToUpdate != null)
                         {
-                            commentToUpdate = comment;
+                            commentToUpdate.IdUser = comment.IdUser;
+                            commentToUpdate.Txt = comment.Txt;
                             int result = context.SaveChanges();
                             if (result > 0)
                             {

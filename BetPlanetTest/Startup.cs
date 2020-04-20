@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Rewrite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
 using System.Diagnostics;
 
 namespace BetPlanetTest
@@ -42,7 +43,8 @@ namespace BetPlanetTest
             // согласно техзаданию: "endpoint - значение из config-файла".
             // (по техзаданию неясно, где же все-таки хранить эту переменную, в ENV или config-файле)
             var options = new RewriteOptions().AddRewrite(
-                    "^(" + Configuration.GetValue<string>("RestApi:endpoint") + @")(/\d/.*)", "/secretapi$2", true);
+                "^(" + Environment.GetEnvironmentVariable("endpoint") + @")(/\d/.*)", "/secretapi$2", true);
+                //"^(" + Configuration.GetValue<string>("RestApi:endpoint") + @")(/\d/.*)", "/secretapi$2", true);
             app.UseRewriter(options);
 
             app.UseRouting();

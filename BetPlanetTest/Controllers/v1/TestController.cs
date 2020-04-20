@@ -51,6 +51,50 @@ namespace BetPlanetTest.Controllers
         }
 
         /// <summary>
+        /// GET: {endpoint}/1/test/usersnameget/name
+        /// Возвращает запись Users по name в JSON формате:
+        /// {"id":5,"name":"User Name","email":"email@email.com"}
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns>200:Users/400/404</returns>
+        [Route("[action]/{name}")]
+        [HttpGet]
+        public ActionResult<Users> UsersNameGet(string name)
+        {
+            
+            Users user = dispatcher.GetUserByName(name);
+
+            if (user == null)
+            {
+                return NotFound(); // 404
+            }
+
+            return Ok(user);
+        }
+
+        /// <summary>
+        /// GET: {endpoint}/1/test/usersemailget/name
+        /// Возвращает запись Users по email в JSON формате:
+        /// {"id":5,"name":"User Name","email":"email@email.com"}
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns>200:Users/400/404</returns>
+        [Route("[action]/{email}")]
+        [HttpGet]
+        public ActionResult<Users> UsersEmailGet(string email)
+        {
+
+            Users user = dispatcher.GetUserByEmail(email);
+
+            if (user == null)
+            {
+                return NotFound(); // 404
+            }
+
+            return Ok(user);
+        }
+
+        /// <summary>
         /// GET: {endpoint}/1/test/usersget
         /// Возвращает список всех записей Users в JSON формате:
         /// [{"id":1,"name":"User Name1","email":"email1@email.com"},
@@ -64,60 +108,31 @@ namespace BetPlanetTest.Controllers
         {
             List<Users> users = dispatcher.GetUsers().ToList();
 
-            if (users == null || users.Count == 0)
-            {
-                return NoContent(); // 204
-            }
-
-            //List<Users> users = new List<Users>() 
-            //{
-            //    new Users(){ Id = 1, Name = "User Name1", Email = "email1@email.com" },
-            //    new Users(){ Id = 2, Name = "User Name2", Email = "email2@email.com" },
-            //    new Users(){ Id = 3, Name = "User Name3", Email = "email3@email.com" }
-            //};
-
             return Ok(users);
         }
 
-        
-        
-
-
-
-
-
-
-
-        // GET: api/Postgres
-        [HttpGet]
-        public IEnumerable<string> Get()
+        // PUT: 
+        [Route("[action]")]
+        [HttpPut]
+        public Users UsersUpd([FromBody] Users user)
         {
-            return new string[] { "value1", "value2" };
-        }
-                
-        // GET: api/Postgres/5
-        [HttpGet("{id}", Name = "Get")]
-        public string Get(int id)
-        {
-            return "value";
+            return user;
         }
 
-        // POST: api/Postgres
+        // POST: 
+        [Route("[action]")]
         [HttpPost]
-        public void Post([FromBody] string value)
+        public Users UsersIns([FromBody] Users user)
         {
+            return user;
         }
 
-        // PUT: api/Postgres/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        // DELETE: 
+        [Route("[action]/{id}")]
+        [HttpDelete]
+        public ActionResult UsersDel(int id)
         {
-        }
-
-        // DELETE: api/ApiWithActions/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            return Ok(id);
         }
     }
 }
