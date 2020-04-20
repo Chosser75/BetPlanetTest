@@ -22,25 +22,20 @@ namespace BetPlanetTest.Controllers
             httpContext.Response.ContentType = "application/json";
         }
 
+        #region --------------------------------- Users -------------------------------------------
+
         /// <summary>
         /// GET: {endpoint}/1/test/usersget/1
         /// Возвращает запись Users по ID в JSON формате:
         /// {"id":5,"name":"User Name","email":"email@email.com"}
         /// </summary>
         /// <param name="id"></param>
-        /// <returns>200:Users/400/404</returns>
+        /// <returns>200:Users/404</returns>
         [Route("[action]/{id}")]
         [HttpGet]
-        public ActionResult<Users> UsersGet(string id)
-        {
-            int numId;
-
-            if (!Int32.TryParse(id, out numId))
-            {
-                return BadRequest(); // 400
-            }
-
-            Users user = dispatcher.GetUserById(numId);
+        public ActionResult<Users> UsersGet(int id)
+        {            
+            Users user = dispatcher.GetUserById(id);
 
             if (user == null)
             {
@@ -73,7 +68,7 @@ namespace BetPlanetTest.Controllers
         }
 
         /// <summary>
-        /// GET: {endpoint}/1/test/usersemailget/name
+        /// GET: {endpoint}/1/test/usersemailget/email
         /// Возвращает запись Users по email в JSON формате:
         /// {"id":5,"name":"User Name","email":"email@email.com"}
         /// </summary>
@@ -106,33 +101,189 @@ namespace BetPlanetTest.Controllers
         [HttpGet]
         public ActionResult<List<Users>> UsersGet()
         {
-            List<Users> users = dispatcher.GetUsers().ToList();
-
-            return Ok(users);
+            return Ok(dispatcher.GetUsers().ToList());
         }
 
-        // PUT: 
+        /// <summary>
+        ///  PUT: {endpoint}/1/test/usersupd
+        ///  body content: JSON Users
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns>200:Users.Id/500</returns>        
         [Route("[action]")]
         [HttpPut]
-        public Users UsersUpd([FromBody] Users user)
+        public ActionResult UsersUpd([FromBody] Users user)
         {
-            return user;
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Invalid data.");
+            }
+                
+            if (!dispatcher.UpdateUser(user))
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
+            return Ok(user.Id);
         }
 
-        // POST: 
+        /// <summary>
+        /// POST: {endpoint}/1/test/usersins
+        /// body content: JSON Users
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns>200:Users.Id/500</returns>        
         [Route("[action]")]
         [HttpPost]
-        public Users UsersIns([FromBody] Users user)
+        public ActionResult UsersIns([FromBody] Users user)
         {
-            return user;
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Invalid data.");
+            }
+
+            if (dispatcher.CreateUser(user) == -1)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
+            return Ok(user.Id);
         }
 
-        // DELETE: 
+        /// <summary>
+        /// DELETE: {endpoint}/1/test/usersdel
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>200:Users.Id/500</returns>        
         [Route("[action]/{id}")]
         [HttpDelete]
         public ActionResult UsersDel(int id)
         {
+            if (!dispatcher.DeleteUser(id))
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
             return Ok(id);
         }
+
+        #endregion ------------------------------ Users -------------------------------------------
+
+        /// <summary>
+        /// GET: {endpoint}/1/test/commentsuseersidget/1
+        /// Возвращает список записей Comments по UseersId в JSON формате:
+        /// [{"id":1,"idUser":1,"txt":"test text"},
+        ///  {"id":2,"idUser":1,"txt":"test text"},
+        ///  {"id":3,"idUser":1,"txt":"test text"}]
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>200:List<Comments></returns>
+        [Route("[action]/{id}")]
+        [HttpGet]
+        public ActionResult<List<Comments>> CommentsUseersIdGet(int id)
+        {
+            return Ok(dispatcher.GetCommentsByUserId(id).ToList());
+        }
+
+        /// <summary>
+        /// GET: {endpoint}/1/test/commentsget/1
+        /// Возвращает запись Comments по ID в JSON формате:
+        /// {"id": 1,"idUser": 2,"txt": "test text"}
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>200:Comments/404</returns>
+        [Route("[action]/{id}")]
+        [HttpGet]
+        public ActionResult<Comments> CommentsGet(int id)
+        {
+            Comments comment = dispatcher.GetCommentById(id);
+
+            if (comment == null)
+            {
+                return NotFound(); // 404
+            }
+
+            return Ok(comment);
+        }
+
+        /// <summary>
+        /// GET: {endpoint}/1/test/commentsget
+        /// Возвращает все записи Comments в JSON формате:
+        /// [{"id":1,"idUser":1,"txt":"test text"},
+        ///  {"id":2,"idUser":2,"txt":"test text"},
+        ///  {"id":3,"idUser":3,"txt":"test text"}]
+        /// </summary>
+        /// <param></param>
+        /// <returns>200:List<Comments></returns>
+        [Route("[action]")]
+        [HttpGet]
+        public ActionResult<List<Comments>> CommentsGet()
+        {            
+            return Ok(dispatcher.GetComments().ToList());
+        }
+
+        /// <summary>
+        ///  PUT: {endpoint}/1/test/commentsupd
+        ///  body content: JSON Comments
+        /// </summary>
+        /// <param name="comment"></param>
+        /// <returns>200:Comments.Id/500</returns>        
+        [Route("[action]")]
+        [HttpPut]
+        public ActionResult CommentsUpd([FromBody] Comments comment)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Invalid data.");
+            }
+
+            if (!dispatcher.UpdateComment(comment))
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
+            return Ok(comment.Id);
+        }
+
+        /// <summary>
+        /// POST: {endpoint}/1/test/commentsins
+        /// body content: JSON Comments
+        /// </summary>
+        /// <param name="comment"></param>
+        /// <returns>200:Comments.Id/500</returns>        
+        [Route("[action]")]
+        [HttpPost]
+        public ActionResult CommentsIns([FromBody] Comments comment)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Invalid data.");
+            }
+
+            if (dispatcher.CreateComment(comment) == -1)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
+            return Ok(comment.Id);
+        }
+
+        /// <summary>
+        /// DELETE: {endpoint}/1/test/commentsdel
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>200:Comments.Id/500</returns>        
+        [Route("[action]/{id}")]
+        [HttpDelete]
+        public ActionResult CommentsDel(int id)
+        {
+            if (!dispatcher.DeleteComment(id))
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
+            return Ok(id);
+        }
+
     }
 }

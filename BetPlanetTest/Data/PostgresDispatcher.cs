@@ -20,8 +20,8 @@ namespace BetPlanetTest.Data
             syncObject = new Object();
         }
 
-        #region ------------- Users----------------
-        
+        #region --------------------------------- Users -------------------------------------------
+
         public int CreateUser(Users user)
         {
             Users newUser = user;
@@ -192,7 +192,7 @@ namespace BetPlanetTest.Data
             return isSuccess;
         }
 
-        #endregion ----------- Users ---------------
+        #endregion ------------------------------ Users -------------------------------------------
 
         public int CreateComment(Comments comment)
         {
