@@ -62,6 +62,54 @@ namespace BetPlanetTest.Data
             return user;
         }
 
+        public Users GetUserByName(string name)
+        {
+            Users user;
+
+            try
+            {
+                using (testContext context = new testContext())
+                {
+                    lock (syncObject)
+                    {
+                        user = context.Users.Single(u => u.Name.Equals(name));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // должно быть залогировано
+                Debug.WriteLine(ex.Message + " ===== " + ex.StackTrace);
+                return null;
+            }
+
+            return user;
+        }
+
+        public Users GetUserByEmail(string email)
+        {
+            Users user;
+
+            try
+            {
+                using (testContext context = new testContext())
+                {
+                    lock (syncObject)
+                    {
+                        user = context.Users.Single(u => u.Email.Equals(email));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // должно быть залогировано
+                Debug.WriteLine(ex.Message + " ===== " + ex.StackTrace);
+                return null;
+            }
+
+            return user;
+        }
+
         public IEnumerable<Users> GetUsers()
         {
             List<Users> users;
@@ -183,6 +231,21 @@ namespace BetPlanetTest.Data
             }
 
             return comment;
+        }
+
+        public IEnumerable<Comments> GetCommentsByUserId(int id)
+        {
+            List<Comments> comments;
+
+            using (testContext context = new testContext())
+            {
+                lock (syncObject)
+                {
+                    comments = context.Comments.Where(c => c.IdUser == id).AsQueryable().ToList();
+                }
+            }
+
+            return comments;
         }
 
         public IEnumerable<Comments> GetComments()

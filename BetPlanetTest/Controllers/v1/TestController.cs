@@ -1,14 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
-using BetPlanetTest.Data;
 using BetPlanetTest.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
 
 namespace BetPlanetTest.Controllers
 {
@@ -18,44 +13,80 @@ namespace BetPlanetTest.Controllers
     public class TestController : ControllerBase
     {
         private IDatabaseDispatcher dispatcher;
+        private HttpContext httpContext;
 
-        public TestController(IDatabaseDispatcher dispatcher)
+        public TestController(IDatabaseDispatcher dispatcher, IHttpContextAccessor httpContextAccessor)
         {
             this.dispatcher = dispatcher;
+            httpContext = httpContextAccessor.HttpContext;
+            httpContext.Response.ContentType = "application/json";
         }
 
+        /// <summary>
+        /// GET: {endpoint}/1/test/usersget/1
+        /// Возвращает запись Users по ID в JSON формате:
+        /// {"id":5,"name":"User Name","email":"email@email.com"}
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>200:Users/400/404</returns>
         [Route("[action]/{id}")]
         [HttpGet]
-        public string UsersGet(string id)
+        public ActionResult<Users> UsersGet(string id)
         {
             int numId;
-            bool success = Int32.TryParse(id, out numId);
-            if (!success)
+
+            if (!Int32.TryParse(id, out numId))
             {
-                return "Ошибка: параметр Id не является целым числом";
+                return BadRequest(); // 400
             }
 
             Users user = dispatcher.GetUserById(numId);
 
-            if(user == null)
+            if (user == null)
             {
-                return "User с Id = " + id + " не найден.";
+                return NotFound(); // 404
             }
 
-            return JsonConvert.SerializeObject(user);
+            return Ok(user);
         }
 
-
-
-
-
-
+        /// <summary>
+        /// GET: {endpoint}/1/test/usersget
+        /// Возвращает список всех записей Users в JSON формате:
+        /// [{"id":1,"name":"User Name1","email":"email1@email.com"},
+        ///  {"id":2,"name":"User Name2","email":"email2@email.com"},
+        ///  {"id":3,"name":"User Name3","email":"email3@email.com"}]
+        /// </summary>
+        /// <returns>200:List<Users>/204</returns>
         [Route("[action]")]
         [HttpGet]
-        public IEnumerable<string> UsersGet()
+        public ActionResult<List<Users>> UsersGet()
         {
-            return new List<string> { "User1", "User2", "User3" };
+            List<Users> users = dispatcher.GetUsers().ToList();
+
+            if (users == null || users.Count == 0)
+            {
+                return NoContent(); // 204
+            }
+
+            //List<Users> users = new List<Users>() 
+            //{
+            //    new Users(){ Id = 1, Name = "User Name1", Email = "email1@email.com" },
+            //    new Users(){ Id = 2, Name = "User Name2", Email = "email2@email.com" },
+            //    new Users(){ Id = 3, Name = "User Name3", Email = "email3@email.com" }
+            //};
+
+            return Ok(users);
         }
+
+        
+        
+
+
+
+
+
+
 
         // GET: api/Postgres
         [HttpGet]
