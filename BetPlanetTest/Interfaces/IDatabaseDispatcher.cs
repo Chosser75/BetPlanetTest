@@ -4,20 +4,22 @@ namespace BetPlanetTest.Interfaces
 {
     public interface IDatabaseDispatcher
     {
-        
-        Users GetUserById(int id);
+
+        int Create<T>(IModel record);
+        IModel GetById<T>(int id);
+        IEnumerable<IModel> GetRecords<T>();
+
         Users GetUserByName(string name);
-        Users GetUserByEmail(string email);
-        IEnumerable<Users> GetUsers();
-        int CreateUser(Users user);
+        Users GetUserByEmail(string email); 
         bool UpdateUser(Users user);
         bool DeleteUser(int id);
-        Comments GetCommentById(int id);
+
+        
         IEnumerable<Comments> GetCommentsByUserId(int id);
-        IEnumerable<Comments> GetComments();
-        int CreateComment(Comments user);
         bool UpdateComment(Comments user);
         bool DeleteComment(int id);
+
+        bool CheckIfRecordExists<T>(int id);
 
     }
 }

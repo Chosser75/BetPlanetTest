@@ -1,11 +1,12 @@
-﻿using System;
+﻿using BetPlanetTest.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BetPlanetTest
 {
-    public partial class Comments
+    public partial class Comments: IModel
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

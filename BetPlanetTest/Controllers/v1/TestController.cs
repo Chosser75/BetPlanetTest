@@ -17,8 +17,8 @@ namespace BetPlanetTest.Controllers
         public TestController(IDatabaseDispatcher dispatcher, IHttpContextAccessor httpContextAccessor)
         {
             this.dispatcher = dispatcher;
-            httpContext = httpContextAccessor.HttpContext;
-            httpContext.Response.ContentType = "application/json";
+            this.httpContext = httpContextAccessor.HttpContext;
+            this.httpContext.Response.ContentType = "application/json";
         }
 
         #region --------------------------------- Users -------------------------------------------
@@ -34,7 +34,7 @@ namespace BetPlanetTest.Controllers
         [HttpGet]
         public ActionResult<Users> UsersGet(int id)
         {            
-            Users user = dispatcher.GetUserById(id);
+            Users user = (Users)dispatcher.GetById<Users>(id);
 
             if (user == null)
             {
@@ -100,7 +100,14 @@ namespace BetPlanetTest.Controllers
         [HttpGet]
         public ActionResult<List<Users>> UsersGet()
         {
-            return Ok(dispatcher.GetUsers().ToList());
+            List<Users> users = new List<Users>();
+
+            foreach (IModel m in dispatcher.GetRecords<Users>().ToList())
+            {
+                users.Add(m as Users);
+            }
+
+            return Ok(users);
         }
 
         /// <summary>
@@ -118,7 +125,7 @@ namespace BetPlanetTest.Controllers
                 return BadRequest("Invalid data.");
             }
 
-            if (dispatcher.GetUserById(user.Id) == null)
+            if (!dispatcher.CheckIfRecordExists<Users>(user.Id))
             {
                 return NotFound(user.Id);
             }
@@ -146,10 +153,15 @@ namespace BetPlanetTest.Controllers
                 return BadRequest("Invalid data.");
             }
 
-            if (dispatcher.CreateUser(user) == -1)
+            if (dispatcher.Create<Users>(user) == -1)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
+
+            //if (dispatcher.CreateUser(user) == -1)
+            //{
+            //    return StatusCode(StatusCodes.Status500InternalServerError);
+            //}
 
             return Ok(user.Id);
         }
@@ -163,7 +175,7 @@ namespace BetPlanetTest.Controllers
         [HttpDelete]
         public ActionResult UsersDel(int id)
         {
-            if (dispatcher.GetUserById(id) == null)
+            if (!dispatcher.CheckIfRecordExists<Users>(id))
             {
                 return NotFound(id);
             }
@@ -205,7 +217,7 @@ namespace BetPlanetTest.Controllers
         [HttpGet]
         public ActionResult<Comments> CommentsGet(int id)
         {
-            Comments comment = dispatcher.GetCommentById(id);
+            Comments comment = (Comments)dispatcher.GetById<Comments>(id);
 
             if (comment == null)
             {
@@ -227,8 +239,15 @@ namespace BetPlanetTest.Controllers
         [Route("[action]")]
         [HttpGet]
         public ActionResult<List<Comments>> CommentsGet()
-        {            
-            return Ok(dispatcher.GetComments().ToList());
+        {
+            List<Comments> comments = new List<Comments>();
+
+            foreach (IModel m in dispatcher.GetRecords<Comments>().ToList())
+            {
+                comments.Add(m as Comments);
+            }
+
+            return Ok(comments);
         }
 
         /// <summary>
@@ -246,7 +265,7 @@ namespace BetPlanetTest.Controllers
                 return BadRequest("Invalid data.");
             }
 
-            if (dispatcher.GetCommentById(comment.Id) == null)
+            if (!dispatcher.CheckIfRecordExists<Comments>(comment.Id))
             {
                 return NotFound(comment.Id);
             }
@@ -274,10 +293,15 @@ namespace BetPlanetTest.Controllers
                 return BadRequest("Invalid data.");
             }
 
-            if (dispatcher.CreateComment(comment) == -1)
+            if (dispatcher.Create<Comments>(comment) == -1)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
+
+            //if (dispatcher.CreateComment(comment) == -1)
+            //{
+            //    return StatusCode(StatusCodes.Status500InternalServerError);
+            //}
 
             return Ok(comment.Id);
         }
@@ -291,7 +315,7 @@ namespace BetPlanetTest.Controllers
         [HttpDelete]
         public ActionResult CommentsDel(int id)
         {
-            if (dispatcher.GetCommentById(id) == null)
+            if (!dispatcher.CheckIfRecordExists<Comments>(id))
             {
                 return NotFound(id);
             }

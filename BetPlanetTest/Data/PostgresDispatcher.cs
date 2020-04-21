@@ -1,4 +1,6 @@
 ﻿using BetPlanetTest.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,31 +10,54 @@ namespace BetPlanetTest.Data
 {
     /// <summary>
     /// Диспетчер по CRUD-коммуникациям с БД test
-    /// Допускает только одно одномоентное обращение к базе данных
+    /// Допускает только одно одномоментное обращение к таблице базы данных
     /// </summary>
     public class PostgresDispatcher: IDatabaseDispatcher
     {
 
-        private static Object syncObject;
+        private static Object syncUsersObject;
+        private static Object syncCommentsObject;
+        private IConfiguration configuration;
+
+        public PostgresDispatcher(IConfiguration config)
+        {
+            this.configuration = config;
+        }
 
         static PostgresDispatcher()
         {
-            syncObject = new Object();
+            syncUsersObject = new Object();
+            syncCommentsObject = new Object();
         }
 
-        #region --------------------------------- Users -------------------------------------------
+        #region -------------------------------- General ------------------------------------------
 
-        public int CreateUser(Users user)
+        public int Create<T>(IModel record)
         {
-            Users newUser = user;
+            T newRecord = (T)record;
+            int id = -1;
 
             try
             {
                 using (testContext context = new testContext())
                 {
-                    lock (syncObject)
+                    lock (syncUsersObject)
                     {
-                        context.Users.Add(newUser);
+                        if (newRecord.GetType() == typeof(Users))
+                        {
+                            context.Users.Add(newRecord as Users);
+                            id = (newRecord as Users).Id;
+                        }
+                        else if (newRecord.GetType() == typeof(Comments))
+                        {
+                            context.Comments.Add(newRecord as Comments);
+                            id = (newRecord as Comments).Id;
+                        }
+                        else
+                        {
+                            return -1;
+                        }
+
                         context.SaveChanges();
                     }
                 }
@@ -44,23 +69,58 @@ namespace BetPlanetTest.Data
                 return -1;
             }
 
-            return newUser.Id;
+            return id;
         }
 
-        public Users GetUserById(int id)
-        {
-            Users user;
-
+        public IModel GetById<T>(int id)
+        {            
             using (testContext context = new testContext())
             {
-                lock (syncObject)
+                lock (syncUsersObject)
                 {
-                    user = context.Users.Find(id);
+                    if (typeof(T) == typeof(Users))
+                    {
+                        return context.Users.Find(id);
+                    }
+                    else if (typeof(T) == typeof(Comments))
+                    {
+                        return context.Comments.Find(id);
+                    }
+                    else
+                    {
+                        return null;
+                    }
                 }
-            }
-
-            return user;
+            }            
         }
+
+        public IEnumerable<IModel> GetRecords<T>()
+        {
+            using (testContext context = new testContext())
+            {
+                lock (syncUsersObject)
+                {
+                    if (typeof(T) == typeof(Users))
+                    {
+                        return context.Users.AsQueryable().ToList();
+                    }
+                    else if (typeof(T) == typeof(Comments))
+                    {
+                        return context.Comments.AsQueryable().ToList();
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+            }           
+        }
+
+        #endregion ----------------------------- General ------------------------------------------
+
+        #region --------------------------------- Users -------------------------------------------
+
+
 
         public Users GetUserByName(string name)
         {
@@ -70,7 +130,7 @@ namespace BetPlanetTest.Data
             {
                 using (testContext context = new testContext())
                 {
-                    lock (syncObject)
+                    lock (syncUsersObject)
                     {
                         user = context.Users.Single(u => u.Name.Equals(name));
                     }
@@ -94,7 +154,7 @@ namespace BetPlanetTest.Data
             {
                 using (testContext context = new testContext())
                 {
-                    lock (syncObject)
+                    lock (syncUsersObject)
                     {
                         user = context.Users.Single(u => u.Email.Equals(email));
                     }
@@ -109,51 +169,52 @@ namespace BetPlanetTest.Data
 
             return user;
         }
-
-        public IEnumerable<Users> GetUsers()
-        {
-            List<Users> users;
-
-            using (testContext context = new testContext())
-            {
-                lock (syncObject)
-                {
-                    users = context.Users.AsQueryable().ToList();
-                }
-            }
-
-            return users;
-        }
-
+        
         public bool UpdateUser(Users user)
-        {
+        {                          
             bool isSuccess = false;
+            bool isProcessed = false;
+            int timeout = configuration.GetValue<int>("DbDispatcher:dbtimeout");
+            DateTime startTime = DateTime.Now;
 
-            try
+            while (!isProcessed)
             {
-                using (testContext context = new testContext())
+                try
                 {
-                    lock (syncObject)
+                    using (testContext context = new testContext())
                     {
-                        Users userToUpdate = context.Users.Find(user.Id);
-                        if (userToUpdate != null)
+                        lock (syncUsersObject)
                         {
-                            userToUpdate.Name = user.Name;
-                            userToUpdate.Email = user.Email;
-                            int result = context.SaveChanges();
-                            if (result > 0)
+                            Users userToUpdate = context.Users.Find(user.Id);
+                            if (userToUpdate != null)
                             {
-                                isSuccess = true;
+                                userToUpdate.Name = user.Name;
+                                userToUpdate.Email = user.Email;
+                                int result = context.SaveChanges();
+                                if (result > 0)
+                                {
+                                    isSuccess = true;                                    
+                                }
                             }
+                            isProcessed = true;
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                // должно быть залогировано
-                Debug.WriteLine(ex.Message + " ===== " + ex.StackTrace);
-                return false;
+                catch (DbUpdateConcurrencyException dbex)
+                {
+                    // должно быть залогировано
+                    Debug.WriteLine(dbex.Message + " ===== " + dbex.StackTrace);
+                    if (DateTime.Now > startTime.AddSeconds(timeout))
+                    {
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // должно быть залогировано
+                    Debug.WriteLine(ex.Message + " ===== " + ex.StackTrace);
+                    return false;
+                }
             }
 
             return isSuccess;
@@ -162,70 +223,64 @@ namespace BetPlanetTest.Data
         public bool DeleteUser(int id)
         {
             bool isSuccess = false;
+            bool isProcessed = false;
+            int timeout = configuration.GetValue<int>("DbDispatcher:dbtimeout");
+            DateTime startTime = DateTime.Now;
 
-            try
+            while (!isProcessed)
             {
-                using (testContext context = new testContext())
+                try
                 {
-                    lock (syncObject)
+                    using (testContext context = new testContext())
                     {
-                        Users userToDelete = context.Users.Find(id);
-                        if (userToDelete != null)
+                        lock (syncUsersObject)
                         {
-                            context.Users.Remove(userToDelete);
-                            int result = context.SaveChanges();                            
-                            if(result > 0)
+                            Users userToDelete = context.Users.Find(id);
+                            if (userToDelete != null)
                             {
-                                isSuccess = true;
+                                context.Users.Remove(userToDelete);
+                                int result = context.SaveChanges();
+                                if (result > 0)
+                                {
+                                    isSuccess = true;
+                                }
                             }
+                            isProcessed = true;
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                // должно быть залогировано
-                Debug.WriteLine(ex.Message + " ===== " + ex.StackTrace);
-                return false;
-            }
+                catch (DbUpdateConcurrencyException dbex)
+                {
+                    // должно быть залогировано
+                    Debug.WriteLine(dbex.Message + " ===== " + dbex.StackTrace);
+                    if (DateTime.Now > startTime.AddSeconds(timeout))
+                    {
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // должно быть залогировано
+                    Debug.WriteLine(ex.Message + " ===== " + ex.StackTrace);
+                    return false;
+                }
+            }            
 
             return isSuccess;
         }
 
         #endregion ------------------------------ Users -------------------------------------------
 
-        public int CreateComment(Comments comment)
-        {
-            Comments newComment = comment;
 
-            try
-            {
-                using (testContext context = new testContext())
-                {
-                    lock (syncObject)
-                    {
-                        context.Comments.Add(newComment);
-                        context.SaveChanges();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // должно быть залогировано
-                Debug.WriteLine(ex.Message + " ===== " + ex.StackTrace);
-                return -1;
-            }
-
-            return newComment.Id;
-        }     
-
+        #region ------------------------------- Comments ------------------------------------------
+                
         public Comments GetCommentById(int id)
         {
             Comments comment;
 
             using (testContext context = new testContext())
             {
-                lock (syncObject)
+                lock (syncCommentsObject)
                 {
                     comment = context.Comments.Find(id);
                 }
@@ -240,24 +295,9 @@ namespace BetPlanetTest.Data
 
             using (testContext context = new testContext())
             {
-                lock (syncObject)
+                lock (syncCommentsObject)
                 {
                     comments = context.Comments.Where(c => c.IdUser == id).AsQueryable().ToList();
-                }
-            }
-
-            return comments;
-        }
-
-        public IEnumerable<Comments> GetComments()
-        {
-            List<Comments> comments;
-
-            using (testContext context = new testContext())
-            {
-                lock (syncObject)
-                {
-                    comments = context.Comments.AsQueryable().ToList();
                 }
             }
 
@@ -272,7 +312,7 @@ namespace BetPlanetTest.Data
             {
                 using (testContext context = new testContext())
                 {
-                    lock (syncObject)
+                    lock (syncCommentsObject)
                     {
                         Comments commentToUpdate = context.Comments.Find(comment.Id);
                         if (commentToUpdate != null)
@@ -306,7 +346,7 @@ namespace BetPlanetTest.Data
             {
                 using (testContext context = new testContext())
                 {
-                    lock (syncObject)
+                    lock (syncUsersObject)
                     {
                         Comments commentToDelete = context.Comments.Find(id);
                         if (commentToDelete != null)
@@ -331,6 +371,28 @@ namespace BetPlanetTest.Data
             return isSuccess;
         }
 
+        #endregion ---------------------------- Comments ------------------------------------------
+
+
+        public bool CheckIfRecordExists<T>(int id)
+        {
+            bool result = false;
+
+            using (testContext context = new testContext())
+            {
+                if (typeof(T) == typeof(Users))
+                {
+                    result = context.Users.Any(u => u.Id == id);
+                }
+                else if (typeof(T) == typeof(Comments))
+                {
+                    result = context.Comments.Any(c => c.Id == id);
+                }
+            }
+
+            return result;
+        }
+               
 
     }
 }
