@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace BetPlanetTest.Interfaces
+﻿namespace BetPlanetTest.Interfaces
 {
     public interface IModel
     {

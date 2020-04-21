@@ -50,7 +50,7 @@ namespace BetPlanetTest.Controllers
         /// {"id":5,"name":"User Name","email":"email@email.com"}
         /// </summary>
         /// <param name="name"></param>
-        /// <returns>200:Users/400/404</returns>
+        /// <returns>200:Users/404</returns>
         [Route("[action]/{name}")]
         [HttpGet]
         public ActionResult<Users> UsersNameGet(string name)
@@ -72,7 +72,7 @@ namespace BetPlanetTest.Controllers
         /// {"id":5,"name":"User Name","email":"email@email.com"}
         /// </summary>
         /// <param name="email"></param>
-        /// <returns>200:Users/400/404</returns>
+        /// <returns>200:Users/404</returns>
         [Route("[action]/{email}")]
         [HttpGet]
         public ActionResult<Users> UsersEmailGet(string email)
@@ -95,7 +95,7 @@ namespace BetPlanetTest.Controllers
         ///  {"id":2,"name":"User Name2","email":"email2@email.com"},
         ///  {"id":3,"name":"User Name3","email":"email3@email.com"}]
         /// </summary>
-        /// <returns>200:List<Users>/204</returns>
+        /// <returns>200:List<Users></returns>
         [Route("[action]")]
         [HttpGet]
         public ActionResult<List<Users>> UsersGet()
@@ -141,6 +141,8 @@ namespace BetPlanetTest.Controllers
         /// <summary>
         /// POST: {endpoint}/1/test/usersins
         /// body content: JSON Users
+        /// Автоинкремент Id срабатывает, если Id модели == 0. 
+        /// Иначе пытается создать запись с указанным в модели Id.
         /// </summary>
         /// <param name="user"></param>
         /// <returns>200:Users.Id/500</returns>        
@@ -157,11 +159,6 @@ namespace BetPlanetTest.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
-
-            //if (dispatcher.CreateUser(user) == -1)
-            //{
-            //    return StatusCode(StatusCodes.Status500InternalServerError);
-            //}
 
             return Ok(user.Id);
         }
@@ -281,6 +278,8 @@ namespace BetPlanetTest.Controllers
         /// <summary>
         /// POST: {endpoint}/1/test/commentsins
         /// body content: JSON Comments
+        /// Автоинкремент Id срабатывает, если Id модели == 0. 
+        /// Иначе пытается создать запись с указанным в модели Id.
         /// </summary>
         /// <param name="comment"></param>
         /// <returns>200:Comments.Id/500</returns>        
@@ -297,11 +296,6 @@ namespace BetPlanetTest.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
-
-            //if (dispatcher.CreateComment(comment) == -1)
-            //{
-            //    return StatusCode(StatusCodes.Status500InternalServerError);
-            //}
 
             return Ok(comment.Id);
         }

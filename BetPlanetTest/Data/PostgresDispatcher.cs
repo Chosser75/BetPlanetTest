@@ -120,8 +120,6 @@ namespace BetPlanetTest.Data
 
         #region --------------------------------- Users -------------------------------------------
 
-
-
         public Users GetUserByName(string name)
         {
             Users user;
