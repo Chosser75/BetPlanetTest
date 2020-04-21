@@ -36,12 +36,26 @@ namespace BetPlanetTest.Data
         {
             T newRecord = (T)record;
             int id = -1;
+            Object syncObject;
+
+            if (typeof(T) == typeof(Users))
+            {
+                syncObject = syncUsersObject;
+            }
+            else if (typeof(T) == typeof(Comments))
+            {
+                syncObject = syncCommentsObject;
+            }
+            else
+            {
+                return -1;
+            }
 
             try
             {
                 using (testContext context = new testContext())
                 {
-                    lock (syncUsersObject)
+                    lock (syncObject)
                     {
                         if (newRecord.GetType() == typeof(Users))
                         {
@@ -52,10 +66,6 @@ namespace BetPlanetTest.Data
                         {
                             context.Comments.Add(newRecord as Comments);
                             id = (newRecord as Comments).Id;
-                        }
-                        else
-                        {
-                            return -1;
                         }
 
                         context.SaveChanges();
@@ -73,10 +83,25 @@ namespace BetPlanetTest.Data
         }
 
         public IModel GetById<T>(int id)
-        {            
+        {
+            Object syncObject;
+
+            if (typeof(T) == typeof(Users))
+            {
+                syncObject = syncUsersObject;
+            }
+            else if (typeof(T) == typeof(Comments))
+            {
+                syncObject = syncCommentsObject;
+            }
+            else
+            {
+                return null;
+            }
+
             using (testContext context = new testContext())
             {
-                lock (syncUsersObject)
+                lock (syncObject)
                 {
                     if (typeof(T) == typeof(Users))
                     {
@@ -86,19 +111,31 @@ namespace BetPlanetTest.Data
                     {
                         return context.Comments.Find(id);
                     }
-                    else
-                    {
-                        return null;
-                    }
+                    return null;
                 }
             }            
         }
 
         public IEnumerable<IModel> GetRecords<T>()
         {
+            Object syncObject;
+
+            if (typeof(T) == typeof(Users))
+            {
+                syncObject = syncUsersObject;
+            }
+            else if (typeof(T) == typeof(Comments))
+            {
+                syncObject = syncCommentsObject;
+            }
+            else
+            {
+                return null;
+            }
+
             using (testContext context = new testContext())
             {
-                lock (syncUsersObject)
+                lock (syncObject)
                 {
                     if (typeof(T) == typeof(Users))
                     {
@@ -344,7 +381,7 @@ namespace BetPlanetTest.Data
             {
                 using (testContext context = new testContext())
                 {
-                    lock (syncUsersObject)
+                    lock (syncCommentsObject)
                     {
                         Comments commentToDelete = context.Comments.Find(id);
                         if (commentToDelete != null)
