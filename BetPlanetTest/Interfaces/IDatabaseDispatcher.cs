@@ -16,7 +16,7 @@ namespace BetPlanetTest.Interfaces
 
         
         IEnumerable<Comments> GetCommentsByUserId(int id);
-        bool UpdateComment(Comments user);
+        bool UpdateComment(Comments comment);
         bool DeleteComment(int id);
 
         bool CheckIfRecordExists<T>(int id);
